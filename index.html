@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BRITANIA IV — Login</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root {
+    --bg:#06060a; --card:#12121a; --border:#23232f;
+    --accent:#4ecdc4; --text:#e6e6ee; --muted:#6b7280;
+    --danger:#ff4d6d; --ok:#3ddc84; --warn:#ffb84d;
+  }
+  html { background:var(--bg); color:var(--text); font-family:'Segoe UI', -apple-system, sans-serif; height:100%; overflow-x:hidden; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI', -apple-system, sans-serif; min-height:100%; overflow-x:hidden; overscroll-behavior:none; }
+  .login-screen { position:fixed; inset:0; z-index:1; background:#06060a; display:flex; align-items:center; justify-content:center; padding:22px; overflow:auto; }
+  .login-screen::before {
+    content:''; position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(78,205,196,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(78,205,196,0.07) 1px, transparent 1px);
+    background-size:32px 32px; pointer-events:none;
+  }
+  .login-box {
+    position:relative; z-index:1; width:100%; max-width:400px;
+    background:rgba(18,18,26,0.92);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--border); border-radius:20px;
+    padding:34px 26px 30px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.8);
+    animation:loginIn .5s ease;
+  }
+  @keyframes loginIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .login-box.shake { animation:shakeBox .45s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes shakeBox {
+    10%,90% { transform:translateX(-3px); } 20%,80% { transform:translateX(6px); }
+    30%,50%,70% { transform:translateX(-10px); } 40%,60% { transform:translateX(10px); }
+  }
+  .login-head { display:flex; flex-direction:column; align-items:center; margin-bottom:26px; }
+  .login-logo {
+    width:120px; height:120px; border-radius:24px;
+    background:linear-gradient(135deg, var(--accent), #0a8f86);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 42px rgba(78,205,196,0.6);
+    margin-bottom:18px; overflow:hidden;
+  }
+  .login-logo img { width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
+  .login-head h2 { font-size:17px; font-weight:800; letter-spacing:3px; text-transform:uppercase; }
+  .login-head p { font-family:monospace; font-size:11px; color:var(--muted); margin-top:6px; letter-spacing:1.5px; }
+  .field { margin-bottom:16px; }
+  .field-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .field label { display:block; font-family:monospace; font-size:10px; letter-spacing:1.8px; color:var(--muted); text-transform:uppercase; }
+  .caps-warn { font-family:monospace; font-size:9px; color:var(--warn); letter-spacing:1px; display:none; align-items:center; gap:4px; }
+  .caps-warn.show { display:inline-flex; }
+  .login-input {
+    width:100%; padding:14px 16px;
+    background:rgba(13,13,20,0.85);
+    border:1px solid var(--border); border-radius:12px;
+    color:var(--text); font-family:monospace; font-size:14px; letter-spacing:1px;
+    outline:none;
+    transition:border-color .25s, box-shadow .25s, color .25s;
+  }
+  .login-input::placeholder { color:#3a3a48; }
+  .login-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(78,205,196,0.12); }
+  .login-input.error { border-color:var(--danger); color:var(--danger); background:rgba(255,77,109,0.06); box-shadow:0 0 0 3px rgba(255,77,109,0.12); }
+  .login-input.error::placeholder { color:rgba(255,77,109,0.5); }
+  .pass-wrap { position:relative; }
+  .pass-wrap .login-input { padding-right:52px; }
+  .pass-toggle {
+    position:absolute; top:50%; right:8px; transform:translateY(-50%);
+    width:38px; height:38px; background:transparent; border:none; border-radius:8px;
+    color:var(--muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:color .2s, background .2s;
+  }
+  .pass-toggle:hover { color:var(--accent); background:rgba(78,205,196,0.08); }
+  .pass-toggle svg { width:20px; height:20px; }
+  .pass-toggle .eye-closed { display:none; }
+  .pass-toggle.revealed { color:var(--danger); }
+  .pass-toggle.revealed .eye-open { display:none; }
+  .pass-toggle.revealed .eye-closed { display:block; }
+  .pass-wrap.error-state .pass-toggle { color:var(--danger); }
+  .login-btn {
+    width:100%; padding:15px; margin-top:8px;
+    background:linear-gradient(135deg, var(--accent), #0a8f86);
+    color:#001a18; border:none; border-radius:12px;
+    font-weight:900; font-size:14px; letter-spacing:3px;
+    text-transform:uppercase; cursor:pointer;
+    transition:transform .15s, filter .25s;
+    font-family:inherit; box-shadow:0 8px 24px rgba(78,205,196,0.28);
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .login-btn:active { transform:scale(.97); filter:brightness(1.1); }
+  .login-btn[disabled] { cursor:wait; filter:brightness(0.85); }
+  .login-btn .btn-spinner {
+    width:14px; height:14px; border-radius:50%;
+    border:2px solid rgba(0,26,24,0.3); border-top-color:#001a18;
+    animation:spin 0.7s linear infinite; display:none;
+  }
+  .login-btn.loading .btn-spinner { display:block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .login-foot { margin-top:20px; text-align:center; font-family:monospace; font-size:10px; color:var(--muted); letter-spacing:1.5px; }
+  .login-foot span { color:var(--accent); }
+  .overlay {
+    position:fixed; inset:0; z-index:1500; background:rgba(5,5,8,0.96);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+    transition:opacity .5s, visibility .5s; opacity:0; visibility:hidden;
+  }
+  .overlay.show { opacity:1; visibility:visible; }
+  .loader { width:52px; height:52px; border-radius:50%; border:3px solid rgba(78,205,196,0.15); border-top-color:var(--accent); animation:spin 1s linear infinite; }
+  .overlay p { font-family:monospace; font-size:12px; letter-spacing:2px; color:var(--accent); text-transform:uppercase; }
+  .overlay small { font-family:monospace; font-size:10px; color:var(--muted); letter-spacing:1px; }
+  .toasts {
+    position:fixed; top:20px; left:50%; transform:translateX(-50%);
+    z-index:3000; display:flex; flex-direction:column; gap:8px;
+    pointer-events:none; align-items:center; max-width:90vw;
+  }
+  .toast {
+    background:rgba(18,18,26,0.95); border:1px solid var(--accent); color:var(--accent);
+    padding:10px 18px; border-radius:12px;
+    font-family:monospace; font-size:11px; letter-spacing:1px;
+    box-shadow:0 0 24px rgba(78,205,196,0.25);
+    animation:toastIn .3s ease; white-space:nowrap; text-align:center;
+  }
+  .toast.error { border-color:var(--danger); color:var(--danger); box-shadow:0 0 24px rgba(255,77,109,0.35); }
+  .toast.warn { border-color:var(--warn); color:var(--warn); box-shadow:0 0 24px rgba(255,184,77,0.35); }
+  @keyframes toastIn { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="toasts" id="toasts"></div>
+
+<div class="login-screen">
+  <div class="login-box" id="loginBox">
+    <div class="login-head">
+      <div class="login-logo">
+        <img src="https://raw.githubusercontent.com/RaffzR/xxx/main/3d27c2f6-46c8-4f93-b020-8bd9b37e641b.jpg" alt="BRITANIA V Logo">
+      </div>
+      <h2>BRITANIA IV Access</h2>
+      <p>Authorized Personnel Only</p>
+    </div>
+
+    <div class="field">
+      <div class="field-head"><label for="loginUser">Username</label></div>
+      <input type="text" id="loginUser" class="login-input" placeholder="enter username" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="32">
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="loginPass">Password</label>
+        <span class="caps-warn" id="capsWarn">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 10V7a2 2 0 1 1 4 0v3"/><path d="M5 10h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"/></svg>
+          CAPS LOCK ON
+        </span>
+      </div>
+      <div class="pass-wrap" id="passWrap">
+        <input type="password" id="loginPass" class="login-input" placeholder="enter password" autocomplete="off" spellcheck="false" maxlength="64">
+        <button type="button" class="pass-toggle" id="passToggle" aria-label="Toggle password">
+          <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <button class="login-btn" id="loginBtn">
+      <span class="btn-spinner"></span>
+      <span class="btn-text">Masuk</span>
+    </button>
+
+    <div class="login-foot">Secure Layer <span>256-bit</span> • v6.9.2</div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="loader"></div>
+  <p id="ovText">Connecting to Server...</p>
+  <small>secure-tunnel.britania-v.io</small>
+</div>
+
+<!-- ============ AUDIO MODULE (D1, D2, D3) ============ -->
+<audio id="audioWelcome" preload="auto" crossorigin="anonymous">
+  <source src="https://raw.githack.com/RaffzR/xxx/main/welcomeSFX.mp3" type="audio/mpeg">
+  <source src="https://raw.githubusercontent.com/RaffzR/xxx/main/welcomeSFX.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* ============================================================
+   AUDIO MODULE — D1 (Welcome), D2 (Fail), D3 (Typing)
+============================================================ */
+(function() {
+  var audioWelcome = document.getElementById('audioWelcome');
+  var audioCtx = null;
+
+  function getCtx() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e) { audioCtx = null; }
+    }
+    return audioCtx;
+  }
+
+  function playFail() {
+    var ctx = getCtx();
+    if (!ctx) return;
+    try {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.35);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.4);
+      var osc2 = ctx.createOscillator();
+      var gain2 = ctx.createGain();
+      osc2.type = 'square';
+      osc2.frequency.setValueAtTime(120, ctx.currentTime);
+      osc2.frequency.setValueAtTime(90, ctx.currentTime + 0.15);
+      gain2.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc2.connect(gain2); gain2.connect(ctx.destination);
+      osc2.start(); osc2.stop(ctx.currentTime + 0.4);
+    } catch(e) {}
+  }
+
+  var lastTypingTime = 0;
+  function playTyping() {
+    var now = Date.now();
+    if (now - lastTypingTime < 30) return;
+    lastTypingTime = now;
+    var ctx = getCtx();
+    if (!ctx) return;
+    try {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'square';
+      var baseFreq = 1100 + Math.random() * 400;
+      osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.6, ctx.currentTime + 0.02);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.04);
+    } catch(e) {}
+  }
+
+  function playWelcome() {
+    if (audioWelcome) {
+      try {
+        audioWelcome.currentTime = 0;
+        audioWelcome.volume = 0.9;
+        var p = audioWelcome.play();
+        if (p && p.catch) {
+          p.catch(function() {
+            var ctx = getCtx();
+            if (!ctx) return;
+            try {
+              [523.25, 659.25, 783.99].forEach(function(f, i) {
+                setTimeout(function() {
+                  try {
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.start(); osc.stop(ctx.currentTime + 0.3);
+                  } catch(e) {}
+                }, i * 100);
+              });
+            } catch(e) {}
+          });
+        }
+      } catch(e) {}
+    }
+  }
+
+  function bindTypingToInputs() {
+    document.querySelectorAll('input[type="text"], input[type="password"]').forEach(function(el) {
+      if (el._paiTypingBound) return;
+      el._paiTypingBound = true;
+      el.addEventListener('keydown', function(e) {
+        if (e.key.length === 1 || e.key === 'Backspace') playTyping();
+      });
+    });
+  }
+
+  window.paiAudio = {
+    welcome: playWelcome,
+    fail: playFail,
+    typing: playTyping,
+    bindTyping: bindTypingToInputs
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindTypingToInputs);
+  } else {
+    bindTypingToInputs();
+  }
+  setInterval(bindTypingToInputs, 1000);
+})();
+
+/* ============================================================
+   KONFIG
+============================================================ */
+const VALID_USER = 'Xyz';
+const VALID_PASS = 'xx';
+const PANEL_URL  = 'panel.html';
+
+/* ============================================================
+   LOGIN LOG HELPER
+============================================================ */
+function paiRnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function paiFakeIP() { return '103.' + paiRnd(0,255) + '.' + paiRnd(0,255) + '.' + paiRnd(0,255); }
+function paiTimeString() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+function saveLoginLog(username, status) {
+  let log = [];
+  try { log = JSON.parse(sessionStorage.getItem('pai_login_log') || '[]'); } catch(e) { log = []; }
+  log.unshift({ time: paiTimeString(), user: username || 'guest', ip: paiFakeIP(), device: navigator.platform || 'Unknown', status: status });
+  if (log.length > 10) log = log.slice(0, 10);
+  sessionStorage.setItem('pai_login_log', JSON.stringify(log));
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+const toasts = document.getElementById('toasts');
+function toast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  if (type === 'error') t.classList.add('error');
+  if (type === 'warn') t.classList.add('warn');
+  t.textContent = msg;
+  toasts.appendChild(t);
+  setTimeout(() => {
+    t.style.transition = 'opacity .3s, transform .3s';
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(-14px)';
+    setTimeout(() => t.remove(), 300);
+  }, 1800);
+}
+
+/* ============================================================
+   LOGIN LOGIC
+============================================================ */
+const loginBox   = document.getElementById('loginBox');
+const loginUser  = document.getElementById('loginUser');
+const loginPass  = document.getElementById('loginPass');
+const loginBtn   = document.getElementById('loginBtn');
+const passToggle = document.getElementById('passToggle');
+const passWrap   = document.getElementById('passWrap');
+const overlay    = document.getElementById('overlay');
+const ovText     = document.getElementById('ovText');
+const capsWarn   = document.getElementById('capsWarn');
+
+window.addEventListener('load', () => setTimeout(() => loginUser.focus(), 300));
+
+function checkCapsLock(e) {
+  if (!e || typeof e.getModifierState !== 'function') return;
+  capsWarn.classList.toggle('show', e.getModifierState('CapsLock'));
+}
+loginPass.addEventListener('keydown', checkCapsLock);
+loginPass.addEventListener('keyup', checkCapsLock);
+loginPass.addEventListener('blur', () => capsWarn.classList.remove('show'));
+
+passToggle.addEventListener('click', (e) => {
+  e.preventDefault();
+  const isP = loginPass.type === 'password';
+  loginPass.type = isP ? 'text' : 'password';
+  passToggle.classList.toggle('revealed', isP);
+  loginPass.focus();
+});
+
+function setFieldError(el, on) { if (on) el.classList.add('error'); else el.classList.remove('error'); }
+function markError(user, pass) {
+  setFieldError(loginUser, user); setFieldError(loginPass, pass);
+  if (pass) passWrap.classList.add('error-state'); else passWrap.classList.remove('error-state');
+}
+function shakeLogin() {
+  loginBox.classList.remove('shake');
+  void loginBox.offsetWidth;
+  loginBox.classList.add('shake');
+}
+function setBtnLoading(on) {
+  loginBtn.disabled = !!on;
+  loginBtn.classList.toggle('loading', !!on);
+}
+
+loginUser.addEventListener('input', () => {
+  if (loginUser.classList.contains('error') && loginUser.value.trim() !== '') setFieldError(loginUser, false);
+});
+loginPass.addEventListener('input', () => {
+  if (loginPass.classList.contains('error') && loginPass.value !== '') {
+    setFieldError(loginPass, false);
+    passWrap.classList.remove('error-state');
+  }
+});
+
+if (sessionStorage.getItem('pai_logged_in') === 'true') window.location.replace(PANEL_URL);
+
+function attemptLogin() {
+  if (loginBtn.disabled) return;
+  const u = loginUser.value.trim();
+  const p = loginPass.value;
+
+  if (u === '' && p === '') {
+    markError(true, true); shakeLogin();
+    toast('You need to enter your usn&pass', 'error');
+    if (window.paiAudio) window.paiAudio.fail();
+    saveLoginLog(u, 'EMPTY');
+    return;
+  }
+  if (u === '') {
+    markError(true, false); shakeLogin();
+    toast('You need to enter a username', 'error');
+    if (window.paiAudio) window.paiAudio.fail();
+    saveLoginLog(u, 'EMPTY');
+    return;
+  }
+  if (p === '') {
+    markError(false, true); shakeLogin();
+    toast('You need to enter your password', 'error');
+    if (window.paiAudio) window.paiAudio.fail();
+    saveLoginLog(u, 'EMPTY');
+    return;
+  }
+
+  if (u === VALID_USER && p === VALID_PASS) {
+    markError(false, false);
+    setBtnLoading(true);
+    toast('CORRECT USN & PASS', 'ok');
+    if (window.paiAudio) window.paiAudio.welcome();
+    saveLoginLog(u, 'SUCCESS');
+    sessionStorage.setItem('pai_logged_in', 'true');
+    sessionStorage.setItem('pai_username', u);
+    setTimeout(() => { overlay.classList.add('show'); runConnectSequence(); }, 1000);
+  } else {
+    markError(true, true); shakeLogin();
+    toast('INCORRECT USN OR PASS', 'error');
+    if (window.paiAudio) window.paiAudio.fail();
+    saveLoginLog(u, 'FAILED');
+  }
+}
+
+loginBtn.addEventListener('click', attemptLogin);
+[loginUser, loginPass].forEach(el => {
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); attemptLogin(); } });
+});
+
+function runConnectSequence() {
+  const steps = ['Establishing Secure Tunnel...', 'Authenticating License...', 'Injecting Module Loader...', 'Syncing Config Files...', 'Session Ready.'];
+  let i = 0;
+  ovText.textContent = steps[i]; i++;
+  const seq = setInterval(() => {
+    if (i < steps.length) { ovText.textContent = steps[i]; i++; }
+    else { clearInterval(seq); setTimeout(() => { window.location.href = PANEL_URL; }, 500); }
+  }, 650);
+}
+
+document.addEventListener('gesturestart', e => e.preventDefault());
+</script>
+</body>
+</html>
